@@ -1,0 +1,52 @@
+---
+title: "Interactive map example"
+author: "Sebastián Rodríguez"
+date: "11/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r ref.label="code",echo=FALSE,warning=FALSE,message=FALSE,fig.width=9,fig.align='center'}
+
+```
+
+
+## Map code
+
+```{r label="code",eval=FALSE}
+library(leaflet)
+library(httr)
+library(XML)
+
+#scRape capital city locations (latitude and longitude)
+
+html <- content(GET("https://lab.lmnixon.org/4th/worldcapitals.html",user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36")))
+
+parsed <- htmlTreeParse(html,useInternalNodes = TRUE)
+
+lats <- xpathSApply(parsed, "//tr/td[3]", xmlValue)[-c(1,202,203,204)]
+
+longs <- xpathSApply(parsed, "//tr/td[4]", xmlValue)[-c(1,202,203,204)]
+
+#transform to the required format
+
+lats <- sapply(lats, function(x){ number<-as.numeric(substr(x,1,nchar(x)-1)) ;ifelse(grepl(pattern = "N",fixed = TRUE,x = x),number,number*-1)})
+
+longs <- sapply(longs, function(x){ number<-as.numeric(substr(x,1,nchar(x)-1)) ;ifelse(grepl(pattern = "E",fixed = TRUE,x = x),number,number*-1)})
+
+#icon extracted from https://icon-library.com/icon/capital-city-icon-4.html
+
+capitalIcon <- makeIcon(
+  iconUrl = "https://icon-library.net//images/capital-city-icon/capital-city-icon-4.jpg",
+  iconWidth = 16, iconHeight = 16,
+  iconAnchorX = 8, iconAnchorY = 8
+)
+
+locations <- data.frame(lat=lats,lng=longs)
+
+map <- locations %>% leaflet() %>% addTiles() %>% addMarkers(icon=capitalIcon)
+map
+```
